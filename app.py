@@ -3,6 +3,7 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import numpy as np  # Добавлен импорт numpy
 
 # Настройка страницы
 st.set_page_config(
@@ -156,7 +157,7 @@ with tab2:
     with col2:
         # Scatter plot
         numerical_cols = ["Age_in_years", "Weight", "Body_length", 
-                        "Sleep_time_hours", "Owner_play_time_minutes"]  # Исправлено
+                        "Sleep_time_hours", "Owner_play_time_minutes"]
         x_axis = st.selectbox("Ось X", numerical_cols, key="x_axis")
         y_axis = st.selectbox("Ось Y", numerical_cols, index=1, key="y_axis")
         
