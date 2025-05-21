@@ -4,6 +4,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np 
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
 st.set_page_config(
     page_title="Cat Analytics Dashboard",
@@ -55,6 +61,8 @@ def load_data():
             "NAN": None
         })
         
+        df["Gender"] = df["Gender"].map({'male': 0, 'female': 1})
+        
         required_columns = ["Breed", "Age_in_years", "Weight", "Owner_play_time_minutes", 
                            "Sleep_time_hours", "Body_length", "Gender", "Country"]
         missing_columns = [col for col in required_columns if col not in df.columns]
@@ -93,6 +101,43 @@ def filter_data(df):
 
 filtered_df = filter_data(df)
 
+# Кэшируем модель, чтобы не обучать каждый раз
+@st.cache_resource
+def train_model(df):
+    df_ml = df.copy()
+    df_ml['Neutered_or_spayed'] = df_ml['Neutered_or_spayed'].astype(int)
+    df_ml['Allowed_outdoor'] = df_ml['Allowed_outdoor'].astype(int)
+
+    X = df_ml.drop(['Breed', 'Age_in_months', 'Country', 'Latitude', 'Longitude'], axis=1)
+    y = df_ml['Breed']
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    categorical_cols = ['Fur_colour_dominant', 'Fur_pattern', 'Eye_colour', 'Preferred_food']
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('cat', OneHotEncoder(), categorical_cols)
+        ],
+        remainder='passthrough'
+    )
+
+    pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('classifier', RandomForestClassifier(random_state=42, class_weight='balanced'))
+    ])
+
+    pipeline.fit(X_train, y_train)
+
+    y_pred = pipeline.predict(X_test)
+    class_report = classification_report(y_test, y_pred, output_dict=True)
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    return pipeline, class_report, conf_matrix, accuracy
+
+pipeline, class_report, conf_matrix, accuracy = train_model(df)
+
 st.subheader("📊 Основные показатели")
 cols = st.columns(4)
 metrics = {
@@ -109,7 +154,7 @@ for col, (label, value) in zip(cols, metrics.items()):
                     f"<p style='margin:0; color: #666;'>{label}</p></div>", 
                     unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📈 Распределение", "📊 Сравнение", "🔍 Корреляции"])
+tab1, tab2, tab3, tab4 = st.tabs(["📈 Распределение", "📊 Сравнение", "🔍 Корреляции", "🤖 Машинное обучение"])
 
 with tab1:
     col1, col2 = st.columns(2)
@@ -170,6 +215,52 @@ with tab3:
     fig.update_layout(title="Матрица корреляций", height=600)
     st.plotly_chart(fig, use_container_width=True)
 
+with tab4:
+    st.subheader("Машинное обучение: предсказание породы")
+    
+    st.write(f"**Точность модели:** {accuracy:.2f}")
+    
+    st.write("**Матрица ошибок:**")
+    st.write(conf_matrix)
+    
+    st.write("**Отчет по классификации:**")
+    st.write(pd.DataFrame(class_report).transpose())
+    
+    st.subheader("Попробуй предсказать породу кошки")
+    with st.form("prediction_form"):
+        age = st.slider("Возраст (годы)", 0.0, float(df["Age_in_years"].max()), 2.0)
+        weight = st.slider("Вес (кг)", 0.0, float(df["Weight"].max()), 5.0)
+        body_length = st.slider("Длина тела (см)", 0.0, float(df["Body_length"].max()), 40.0)
+        sleep_time = st.slider("Время сна (часы)", 0, int(df["Sleep_time_hours"].max()), 16)
+        play_time = st.slider("Время игры с хозяином (минуты)", 0, int(df["Owner_play_time_minutes"].max()), 20)
+        gender = st.selectbox("Пол", ["male", "female"])
+        neutered = st.selectbox("Стерилизован/кастрирован", [True, False])
+        outdoor = st.selectbox("Разрешено выходить на улицу", [True, False])
+        fur_colour = st.selectbox("Цвет шерсти", df["Fur_colour_dominant"].unique())
+        fur_pattern = st.selectbox("Узор шерсти", df["Fur_pattern"].unique())
+        eye_colour = st.selectbox("Цвет глаз", df["Eye_colour"].unique())
+        preferred_food = st.selectbox("Предпочитаемая еда", df["Preferred_food"].unique())
+        
+        submit_button = st.form_submit_button("Предсказать")
+        
+        if submit_button:
+            input_data = pd.DataFrame({
+                'Age_in_years': [age],
+                'Weight': [weight],
+                'Body_length': [body_length],
+                'Sleep_time_hours': [sleep_time],
+                'Owner_play_time_minutes': [play_time],
+                'Gender': [1 if gender == 'female' else 0],
+                'Neutered_or_spayed': [int(neutered)],
+                'Allowed_outdoor': [int(outdoor)],
+                'Fur_colour_dominant': [fur_colour],
+                'Fur_pattern': [fur_pattern],
+                'Eye_colour': [eye_colour],
+                'Preferred_food': [preferred_food]
+            })
+            
+            prediction = pipeline.predict(input_data)[0]
+            st.success(f"Предсказанная порода: **{prediction}**")
 
 with st.sidebar:
     st.markdown("---")

@@ -3,3 +3,4 @@ pandas>=1.5.0
 plotly>=5.15.0
 numpy>=1.24.0
 statsmodels
+scikit-learn>=1.4.0
