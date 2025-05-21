@@ -99,7 +99,7 @@ metrics = {
     "Всего кошек": len(filtered_df),
     "Средний возраст": f"{filtered_df['Age_in_years'].mean():.1f} лет",
     "Средний вес": f"{filtered_df['Weight'].mean():.1f} кг",
-    "Активность (ч/день)": f"{filtered_df['Owner_play_time_minutes'].mean() / 60:.1f} часов"  # Перевод минут в часы
+    "Активность (ч/день)": f"{filtered_df['Owner_play_time_minutes'].mean() / 60:.1f} часов"
 }
 
 for col, (label, value) in zip(cols, metrics.items()):
