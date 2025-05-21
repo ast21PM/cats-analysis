@@ -3,9 +3,8 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import numpy as np  # Добавлен импорт numpy
+import numpy as np 
 
-# Настройка страницы
 st.set_page_config(
     page_title="Cat Analytics Dashboard",
     page_icon="🐾",
@@ -13,7 +12,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Стили CSS
 st.markdown("""
 <style>
     .block-container {
@@ -34,24 +32,21 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Заголовок
 st.title("🐱 Advanced Cat Analytics Dashboard")
 st.markdown("""
 **Анализ характеристик кошек трёх пород:** Ангора, Рэгдолл, Мейн-кун  
 *Источник данных: [It's Raining Cats Dataset](https://www.kaggle.com/datasets/joannanplkrk/its-raining-cats)*
 """)
 
-# Загрузка данных
 @st.cache_data
 def load_data():
     try:
         df = pd.read_csv("data/cat_breeds_clean.csv", sep=";")
         
-        # Преобразование булевых значений
         df["Neutered_or_spayed"] = df["Neutered_or_spayed"].astype(str).str.upper().map({
             "TRUE": True,
             "FALSE": False,
-            "NAN": None  # Обработка пропущенных значений
+            "NAN": None 
         })
         
         df["Allowed_outdoor"] = df["Allowed_outdoor"].astype(str).str.upper().map({
@@ -60,7 +55,6 @@ def load_data():
             "NAN": None
         })
         
-        # Проверка наличия необходимых столбцов
         required_columns = ["Breed", "Age_in_years", "Weight", "Owner_play_time_minutes", 
                            "Sleep_time_hours", "Body_length", "Gender", "Country"]
         missing_columns = [col for col in required_columns if col not in df.columns]
@@ -75,7 +69,6 @@ def load_data():
 
 df = load_data()
 
-# Фильтры в боковой панели
 with st.sidebar:
     with st.expander("⚙️ Фильтры данных", expanded=True):
         breed_filter = st.selectbox("Порода", ["Все"] + df["Breed"].unique().tolist())
@@ -86,7 +79,6 @@ with st.sidebar:
                              value=(0, int(df["Age_in_years"].max())))
         country_filter = st.selectbox("Страна", ["Все"] + df["Country"].unique().tolist())
 
-# Фильтрация данных
 def filter_data(df):
     filtered_df = df.copy()
     if breed_filter != "Все":
@@ -101,7 +93,6 @@ def filter_data(df):
 
 filtered_df = filter_data(df)
 
-# Ключевые метрики
 st.subheader("📊 Основные показатели")
 cols = st.columns(4)
 metrics = {
@@ -118,14 +109,12 @@ for col, (label, value) in zip(cols, metrics.items()):
                     f"<p style='margin:0; color: #666;'>{label}</p></div>", 
                     unsafe_allow_html=True)
 
-# Визуализации во вкладках
 tab1, tab2, tab3 = st.tabs(["📈 Распределение", "📊 Сравнение", "🔍 Корреляции"])
 
 with tab1:
     col1, col2 = st.columns(2)
     
     with col1:
-        # Распределение по породам
         fig = px.pie(filtered_df, names="Breed", title="Распределение по породам",
                     hole=0.4, color="Breed", 
                     color_discrete_map={
@@ -137,7 +126,6 @@ with tab1:
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
-        # Распределение возраста
         fig = px.histogram(filtered_df, x="Age_in_years", nbins=20, 
                          title="Распределение возраста",
                          color="Breed", barmode="overlay",
@@ -148,14 +136,12 @@ with tab2:
     col1, col2 = st.columns(2)
     
     with col1:
-        # Boxplot параметров
         fig = px.box(filtered_df, x="Breed", y="Weight", 
                     title="Распределение веса по породам",
                     color="Breed", points="all")
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
-        # Scatter plot
         numerical_cols = ["Age_in_years", "Weight", "Body_length", 
                         "Sleep_time_hours", "Owner_play_time_minutes"]
         x_axis = st.selectbox("Ось X", numerical_cols, key="x_axis")
@@ -171,7 +157,6 @@ with tab2:
         st.plotly_chart(fig, use_container_width=True)
 
 with tab3:
-    # Матрица корреляций
     corr_matrix = filtered_df[numerical_cols].corr()
     fig = go.Figure(data=go.Heatmap(
         z=corr_matrix,
@@ -185,7 +170,7 @@ with tab3:
     fig.update_layout(title="Матрица корреляций", height=600)
     st.plotly_chart(fig, use_container_width=True)
 
-# Дополнительная информация в боковой панели
+
 with st.sidebar:
     st.markdown("---")
     with st.expander("ℹ️ О проекте"):
