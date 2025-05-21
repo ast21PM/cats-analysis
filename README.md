@@ -5,4 +5,8 @@
 
 Автор проекта: [ast]  
 
-[Ссылка на работающий сервис](https://your-app-name.streamlit.app/)
+![Screenshot](screenshot.png)
+
+
+
+[Ссылка на работающий сервис](https://cats-analysis.streamlit.app/)
