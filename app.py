@@ -44,27 +44,71 @@ st.markdown("""
 *Источник данных: [It's Raining Cats Dataset](https://www.kaggle.com/datasets/joannanplkrk/its-raining-cats)*
 """)
 
+
+FUR_COLOUR_MAP = {
+    'white': 'Белый',
+    'black': 'Черный',
+    'red/cream': 'Рыжий/Кремовый',
+    'brown/chocolate': 'Шоколадный',
+    'seal': 'Темно-коричневый',
+    'lilac': 'Лиловый',
+}
+
+FUR_PATTERN_MAP = {
+    'solid': 'Однотонный',
+    'tabby': 'Полосатый',
+    'tortie': 'Черепаховый',
+    'bicolor': 'Двухцветный',
+    'colorpoint': 'Цветные точки',
+    'mitted': 'Серый леопард',
+}
+
+EYE_COLOUR_MAP = {
+    'blue': 'Голубой',
+    'green': 'Зеленый',
+    'amber': 'Янтарный',
+    'yellow': 'Желтый',
+}
+
+PREFERRED_FOOD_MAP = {
+    'wet': 'Влажный корм',
+    'dry': 'Сухой корм',
+}
+
+INV_FUR_COLOUR_MAP = {v: k for k, v in FUR_COLOUR_MAP.items()}
+INV_FUR_PATTERN_MAP = {v: k for k, v in FUR_PATTERN_MAP.items()}
+INV_EYE_COLOUR_MAP = {v: k for k, v in EYE_COLOUR_MAP.items()}
+INV_PREFERRED_FOOD_MAP = {v: k for k, v in PREFERRED_FOOD_MAP.items()}
+
+
 @st.cache_data
 def load_data():
     try:
         df = pd.read_csv("data/cat_breeds_clean.csv", sep=";")
         
         df["Neutered_or_spayed"] = df["Neutered_or_spayed"].astype(str).str.upper().map({
-            "TRUE": True,
-            "FALSE": False,
+            "TRUE": 'Да',
+            "FALSE": 'Нет',
             "NAN": None 
         })
         
         df["Allowed_outdoor"] = df["Allowed_outdoor"].astype(str).str.upper().map({
-            "TRUE": True,
-            "FALSE": False,
+            "TRUE": 'Да',
+            "FALSE": 'Нет',
             "NAN": None
         })
         
-        df["Gender"] = df["Gender"].map({'male': 0, 'female': 1})
+        df["Gender"] = df["Gender"].map({'male': 'Кот', 'female': 'Кошка'}) 
         
+
+        df["Fur_colour_dominant"] = df["Fur_colour_dominant"].apply(lambda x: FUR_COLOUR_MAP.get(x, x))
+        df["Fur_pattern"] = df["Fur_pattern"].apply(lambda x: FUR_PATTERN_MAP.get(x, x))
+        df["Eye_colour"] = df["Eye_colour"].apply(lambda x: EYE_COLOUR_MAP.get(x, x))
+        df["Preferred_food"] = df["Preferred_food"].apply(lambda x: PREFERRED_FOOD_MAP.get(x, x))
+
         required_columns = ["Breed", "Age_in_years", "Weight", "Owner_play_time_minutes", 
-                           "Sleep_time_hours", "Body_length", "Gender", "Country"]
+                           "Sleep_time_hours", "Body_length", "Gender", "Country",
+                           "Fur_colour_dominant", "Fur_pattern", "Eye_colour", "Preferred_food"]
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             st.error(f"Отсутствуют столбцы в данных: {missing_columns}")
@@ -104,8 +148,16 @@ filtered_df = filter_data(df)
 @st.cache_resource
 def train_model(df):
     df_ml = df.copy()
-    df_ml['Neutered_or_spayed'] = df_ml['Neutered_or_spayed'].astype(int)
-    df_ml['Allowed_outdoor'] = df_ml['Allowed_outdoor'].astype(int)
+    
+    df_ml["Gender"] = df_ml["Gender"].map({'Кот': 0, 'Кошка': 1})
+    df_ml['Neutered_or_spayed'] = df_ml['Neutered_or_spayed'].map({'Да': 1, 'Нет': 0})
+    df_ml['Allowed_outdoor'] = df_ml['Allowed_outdoor'].map({'Да': 1, 'Нет': 0})
+
+
+    df_ml["Fur_colour_dominant"] = df_ml["Fur_colour_dominant"].apply(lambda x: INV_FUR_COLOUR_MAP.get(x, x))
+    df_ml["Fur_pattern"] = df_ml["Fur_pattern"].apply(lambda x: INV_FUR_PATTERN_MAP.get(x, x))
+    df_ml["Eye_colour"] = df_ml["Eye_colour"].apply(lambda x: INV_EYE_COLOUR_MAP.get(x, x))
+    df_ml["Preferred_food"] = df_ml["Preferred_food"].apply(lambda x: INV_PREFERRED_FOOD_MAP.get(x, x))
 
     X = df_ml.drop(['Breed', 'Age_in_months', 'Country'], axis=1)
     y = df_ml['Breed']
@@ -113,10 +165,14 @@ def train_model(df):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     categorical_cols = ['Fur_colour_dominant', 'Fur_pattern', 'Eye_colour', 'Preferred_food']
+    
+    for col in categorical_cols:
+        if df_ml[col].isnull().any():
+            df_ml[col] = df_ml[col].fillna('unknown') 
 
     preprocessor = ColumnTransformer(
         transformers=[
-            ('cat', OneHotEncoder(), categorical_cols)
+            ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
         ],
         remainder='passthrough'
     )
@@ -234,9 +290,10 @@ with tab3:
         body_length = st.slider("Длина тела (см)", 0.0, float(df["Body_length"].max()), 40.0)
         sleep_time = st.slider("Время сна (часы)", 0, int(df["Sleep_time_hours"].max()), 16)
         play_time = st.slider("Время игры с хозяином (минуты)", 0, int(df["Owner_play_time_minutes"].max()), 20)
-        gender = st.selectbox("Пол", ["male", "female"])
-        neutered = st.selectbox("Стерилизован/кастрирован", [True, False])
-        outdoor = st.selectbox("Разрешено выходить на улицу", [True, False])
+        gender = st.selectbox("Пол", ["Кот", "Кошка"]) 
+        neutered = st.selectbox("Стерилизован/кастрирован", ["Да", "Нет"])
+        outdoor = st.selectbox("Разрешено выходить на улицу", ["Да", "Нет"])
+        
         fur_colour = st.selectbox("Цвет шерсти", df["Fur_colour_dominant"].unique())
         fur_pattern = st.selectbox("Узор шерсти", df["Fur_pattern"].unique())
         eye_colour = st.selectbox("Цвет глаз", df["Eye_colour"].unique())
@@ -251,13 +308,13 @@ with tab3:
                 'Body_length': [body_length],
                 'Sleep_time_hours': [sleep_time],
                 'Owner_play_time_minutes': [play_time],
-                'Gender': [1 if gender == 'female' else 0],
-                'Neutered_or_spayed': [int(neutered)],
-                'Allowed_outdoor': [int(outdoor)],
-                'Fur_colour_dominant': [fur_colour],
-                'Fur_pattern': [fur_pattern],
-                'Eye_colour': [eye_colour],
-                'Preferred_food': [preferred_food]
+                'Gender': [1 if gender == 'Кошка' else 0], 
+                'Neutered_or_spayed': [1 if neutered == 'Да' else 0],
+                'Allowed_outdoor': [1 if outdoor == 'Да' else 0],
+                'Fur_colour_dominant': [INV_FUR_COLOUR_MAP.get(fur_colour)],
+                'Fur_pattern': [INV_FUR_PATTERN_MAP.get(fur_pattern)],
+                'Eye_colour': [INV_EYE_COLOUR_MAP.get(eye_colour)],
+                'Preferred_food': [INV_PREFERRED_FOOD_MAP.get(preferred_food)]
             })
             
             prediction = pipeline.predict(input_data)[0]
