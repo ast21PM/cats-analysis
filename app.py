@@ -11,7 +11,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
-# Настройка страницы Streamlit
 st.set_page_config(
     page_title="Аналитика кошек",
     page_icon="🐾",
@@ -19,7 +18,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Пользовательский CSS для стилизации
 st.markdown("""
 <style>
     .block-container {
@@ -40,21 +38,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Заголовок и описание страницы
 st.title("🐱 Аналитика кошек")
 st.markdown("""
 **Анализ характеристик трех пород кошек:** Ангора, Рэгдолл, Мейн-кун  
 *Источник данных: [It's Raining Cats Dataset](https://www.kaggle.com/datasets/joannanplkrk/its-raining-cats)*
 """)
 
-# Функция загрузки и предобработки данных
 @st.cache_data
 def load_data():
     try:
-        # Загрузка датасета
-        df = pd.read_csv("data/cat_breeds_clean_russian.csv", sep=";")
+        df = pd.read_csv("data/cat_breeds_clean.csv", sep=";")
         
-        # Предобработка булевых и категориальных столбцов
         df["Кастрирован_или_Стерилизован"] = df["Кастрирован_или_Стерилизован"].astype(str).str.upper().map({
             "TRUE": True,
             "FALSE": False,
@@ -69,7 +63,6 @@ def load_data():
         
         df["Пол"] = df["Пол"].map({'male': 0, 'female': 1})
         
-        # Проверка наличия необходимых столбцов
         required_columns = ["Порода", "Возраст_Годы", "Вес_кг", "Время_Игры_с_Хозяином_Минуты", 
                            "Время_Сна_Часы", "Длина_Тела_см", "Пол", "Страна"]
         missing_columns = [col for col in required_columns if col not in df.columns]
@@ -79,13 +72,11 @@ def load_data():
         
         return df
     except FileNotFoundError:
-        st.error("Файл data/cat_breeds_clean_russian.csv не найден")
+        st.error("Файл data/cat_breeds_clean.csv не найден")
         st.stop()
 
-# Загрузка данных
 df = load_data()
 
-# Фильтры в боковой панели
 with st.sidebar:
     with st.expander("⚙️ Фильтры данных", expanded=True):
         breed_filter = st.selectbox("Порода", ["Все"] + df["Порода"].unique().tolist())
@@ -96,7 +87,6 @@ with st.sidebar:
                              value=(0, int(df["Возраст_Годы"].max())))
         country_filter = st.selectbox("Страна", ["Все"] + df["Страна"].unique().tolist())
 
-# Фильтрация данных на основе пользовательского ввода
 def filter_data(df):
     filtered_df = df.copy()
     if breed_filter != "Все":
@@ -111,7 +101,6 @@ def filter_data(df):
 
 filtered_df = filter_data(df)
 
-# Обучение модели машинного обучения
 @st.cache_resource
 def train_model(df):
     df_ml = df.copy()
@@ -148,7 +137,6 @@ def train_model(df):
 
 pipeline, class_report, conf_matrix, accuracy = train_model(df)
 
-# Отображение ключевых метрик
 st.subheader("📊 Ключевые метрики")
 cols = st.columns(4)
 metrics = {
@@ -165,7 +153,6 @@ for col, (label, value) in zip(cols, metrics.items()):
                     f"<p style='margin:0; color: #666;'>{label}</p></div>", 
                     unsafe_allow_html=True)
 
-# Вкладки для различных визуализаций
 tab1, tab2, tab3, tab4 = st.tabs(["📈 Распределения", "📊 Сравнения", "🔍 Корреляции", "🤖 Машинное обучение"])
 
 with tab1:
@@ -232,9 +219,6 @@ with tab4:
     
     st.write(f"**Точность модели:** {accuracy:.2f}")
     
-    st.write("**Матрица ошибок:**")
-    st.write(conf_matrix)
-    
     st.write("**Отчет по классификации:**")
     st.write(pd.DataFrame(class_report).transpose())
     
@@ -274,7 +258,6 @@ with tab4:
             prediction = pipeline.predict(input_data)[0]
             st.success(f"Предсказанная порода: **{prediction}**")
 
-# Информация о проекте в боковой панели
 with st.sidebar:
     st.markdown("---")
     with st.expander("ℹ️ О проекте"):
