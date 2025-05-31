@@ -10,6 +10,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+import os # Импортируем модуль os для работы с путями к файлам
 
 st.set_page_config(
     page_title="Аналитика кошек",
@@ -40,7 +41,7 @@ st.markdown("""
 
 st.title("🐱 Расширенная аналитика кошек")
 st.markdown("""
-**Анализ характеристик кошек трёх пород:** Ангора, Рэгдолл, Мейн-кун  
+**Анализ характеристик кошек трёх пород:** Ангора, Рэгдолл, Мейн-кун  
 *Источник данных: [It's Raining Cats Dataset](https://www.kaggle.com/datasets/joannanplkrk/its-raining-cats)*
 """)
 
@@ -80,6 +81,13 @@ INV_FUR_PATTERN_MAP = {v: k for k, v in FUR_PATTERN_MAP.items()}
 INV_EYE_COLOUR_MAP = {v: k for k, v in EYE_COLOUR_MAP.items()}
 INV_PREFERRED_FOOD_MAP = {v: k for k, v in PREFERRED_FOOD_MAP.items()}
 
+# Словарь с путями к изображениям для каждой породы
+BREED_IMAGES = {
+    'Angora': [f"data/Angora{i}.png" for i in range(1, 4)],
+    'Maine coon': [f"data/Coon{i}.png" for i in range(1, 4)],
+    'Ragdoll': [f"data/Ragdoll{i}.png" for i in range(1, 4)],
+}
+
 
 @st.cache_data
 def load_data():
@@ -107,8 +115,8 @@ def load_data():
         df["Preferred_food"] = df["Preferred_food"].apply(lambda x: PREFERRED_FOOD_MAP.get(x, x))
 
         required_columns = ["Breed", "Age_in_years", "Weight", "Owner_play_time_minutes", 
-                           "Sleep_time_hours", "Body_length", "Gender", "Country",
-                           "Fur_colour_dominant", "Fur_pattern", "Eye_colour", "Preferred_food"]
+                            "Sleep_time_hours", "Body_length", "Gender", "Country",
+                            "Fur_colour_dominant", "Fur_pattern", "Eye_colour", "Preferred_food"]
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             st.error(f"Отсутствуют столбцы в данных: {missing_columns}")
@@ -126,9 +134,9 @@ with st.sidebar:
         breed_filter = st.selectbox("Порода", ["Все"] + df["Breed"].unique().tolist())
         gender_filter = st.selectbox("Пол", ["Все"] + df["Gender"].unique().tolist())
         age_filter = st.slider("Возраст (годы)", 
-                             min_value=0, 
-                             max_value=int(df["Age_in_years"].max()), 
-                             value=(0, int(df["Age_in_years"].max())))
+                               min_value=0, 
+                               max_value=int(df["Age_in_years"].max()), 
+                               value=(0, int(df["Age_in_years"].max())))
         country_filter = st.selectbox("Страна", ["Все"] + df["Country"].unique().tolist())
 
 def filter_data(df):
@@ -138,7 +146,7 @@ def filter_data(df):
     if gender_filter != "Все":
         filtered_df = filtered_df[filtered_df["Gender"] == gender_filter]
     filtered_df = filtered_df[(filtered_df["Age_in_years"] >= age_filter[0]) & 
-                            (filtered_df["Age_in_years"] <= age_filter[1])]
+                             (filtered_df["Age_in_years"] <= age_filter[1])]
     if country_filter != "Все":
         filtered_df = filtered_df[filtered_df["Country"] == country_filter]
     return filtered_df
@@ -205,9 +213,9 @@ metrics = {
 for col, (label, value) in zip(cols, metrics.items()):
     with col:
         st.markdown(f"<div style='padding: 20px; background-color: #f8f9fa; border-radius: 10px;'>"
-                    f"<h3 style='margin:0; color: #2c2c2c;'>{value}</h3>"
-                    f"<p style='margin:0; color: #666;'>{label}</p></div>", 
-                    unsafe_allow_html=True)
+                            f"<h3 style='margin:0; color: #2c2c2c;'>{value}</h3>"
+                            f"<p style='margin:0; color: #666;'>{label}</p></div>", 
+                            unsafe_allow_html=True)
 
 tab1, tab2, tab3 = st.tabs(["📈 Распределение", "📊 Сравнение", "🤖 Машинное обучение"])
 
@@ -216,26 +224,26 @@ with tab1:
     
     with col1:
         fig = px.pie(filtered_df, names="Breed", title="Распределение по породам",
-                    hole=0.4, color="Breed", 
-                    color_discrete_map={
-                        'Angora': '#FFA07A',
-                        'Ragdoll': '#87CEEB',
-                        'Maine Coon': '#778899'
-                    })
+                     hole=0.4, color="Breed", 
+                     color_discrete_map={
+                         'Angora': '#FFA07A',
+                         'Ragdoll': '#87CEEB',
+                         'Maine coon': '#778899'
+                     })
         fig.update_traces(textposition='inside', textinfo='percent+label')
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
         fig = px.histogram(filtered_df, x="Age_in_years", nbins=20, 
-                         title="Распределение возраста",
-                         color="Breed", 
-                         barmode="group",
-                         opacity=1,
-                         labels={
-                             "Age_in_years": "Возраст (годы)",
-                             "count": "Количество кошек",
-                             "Breed": "Порода"
-                         })
+                           title="Распределение возраста",
+                           color="Breed", 
+                           barmode="group",
+                           opacity=1,
+                           labels={
+                               "Age_in_years": "Возраст (годы)",
+                               "count": "Количество кошек",
+                               "Breed": "Порода"
+                           })
         
         fig.update_layout(
             bargap=0.2,
@@ -254,13 +262,13 @@ with tab2:
     
     with col1:
         fig = px.box(filtered_df, x="Breed", y="Weight", 
-                    title="Распределение веса по породам",
-                    color="Breed", points="all")
+                     title="Распределение веса по породам",
+                     color="Breed", points="all")
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
         numerical_cols = ["Age_in_years", "Weight", "Body_length", 
-                        "Sleep_time_hours", "Owner_play_time_minutes"]
+                          "Sleep_time_hours", "Owner_play_time_minutes"]
         x_axis = st.selectbox("Ось X", numerical_cols, key="x_axis")
         y_axis = st.selectbox("Ось Y", numerical_cols, index=1, key="y_axis")
         
@@ -320,18 +328,32 @@ with tab3:
             prediction = pipeline.predict(input_data)[0]
             st.success(f"Предсказанная порода: **{prediction}**")
 
+            # Отображение изображений
+            if prediction in BREED_IMAGES:
+                st.write(f"Примеры кошек породы {prediction}:")
+                cols = st.columns(len(BREED_IMAGES[prediction]))
+                for i, img_path in enumerate(BREED_IMAGES[prediction]):
+                    # Проверяем, существует ли файл
+                    if os.path.exists(img_path):
+                        with cols[i]:
+                            st.image(img_path, caption=f"{prediction} {i+1}", use_container_width=True)
+                    else:
+                        st.warning(f"Изображение не найдено: {img_path}")
+            else:
+                st.info("Для данной породы нет доступных изображений.")
+
 with st.sidebar:
     st.markdown("---")
     with st.expander("ℹ️ О проекте"):
         st.markdown("""
-        **Автор:** [ast]  
-        **Версия:** 1.0  
-        **Обновлено:** 2023-12-20  
-                    
+        **Автор:** [ast]  
+        **Версия:** 1.0  
+        **Обновлено:** 2023-12-20  
+                            
         Этот дашборд позволяет анализировать данные о кошках трёх пород:
         - Ангора
         - Рэгдолл
         - Мейн-кун
-                    
+                            
         Используйте фильтры для уточнения данных и переключайтесь между вкладками для просмотра различных визуализаций.
         """)
