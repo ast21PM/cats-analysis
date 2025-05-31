@@ -172,8 +172,25 @@ with tab1:
     with col2:
         fig = px.histogram(filtered_df, x="Age_in_years", nbins=20, 
                          title="Распределение возраста",
-                         color="Breed", barmode="overlay",
-                         opacity=0.7)
+                         color="Breed", 
+                         barmode="group",
+                         opacity=1,
+                         labels={
+                             "Age_in_years": "Возраст (годы)",
+                             "count": "Количество кошек",
+                             "Breed": "Порода"
+                         })
+        
+        fig.update_layout(
+            bargap=0.2,
+            bargroupgap=0.1
+        )
+        
+        fig.update_traces(
+            marker_line_width=1,
+            marker_line_color="white"
+        )
+        
         st.plotly_chart(fig, use_container_width=True)
 
 with tab2:
