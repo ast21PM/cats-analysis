@@ -10,7 +10,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-import os # Импортируем модуль os для работы с путями к файлам
+import os 
 
 st.set_page_config(
     page_title="Аналитика кошек",
@@ -81,7 +81,7 @@ INV_FUR_PATTERN_MAP = {v: k for k, v in FUR_PATTERN_MAP.items()}
 INV_EYE_COLOUR_MAP = {v: k for k, v in EYE_COLOUR_MAP.items()}
 INV_PREFERRED_FOOD_MAP = {v: k for k, v in PREFERRED_FOOD_MAP.items()}
 
-# Словарь с путями к изображениям для каждой породы
+
 BREED_IMAGES = {
     'Angora': [f"data/Angora{i}.png" for i in range(1, 4)],
     'Maine coon': [f"data/Coon{i}.png" for i in range(1, 4)],
@@ -328,12 +328,12 @@ with tab3:
             prediction = pipeline.predict(input_data)[0]
             st.success(f"Предсказанная порода: **{prediction}**")
 
-            # Отображение изображений
+
             if prediction in BREED_IMAGES:
                 st.write(f"Примеры кошек породы {prediction}:")
                 cols = st.columns(len(BREED_IMAGES[prediction]))
                 for i, img_path in enumerate(BREED_IMAGES[prediction]):
-                    # Проверяем, существует ли файл
+
                     if os.path.exists(img_path):
                         with cols[i]:
                             st.image(img_path, caption=f"{prediction} {i+1}", use_container_width=True)
