@@ -45,122 +45,140 @@ st.markdown("""
 """)
 
 @st.cache_data
-def load_data():
+def загрузить_данные():
     try:
         df = pd.read_csv("data/cat_breeds_clean.csv", sep=";")
         
-        df["Neutered_or_spayed"] = df["Neutered_or_spayed"].astype(str).str.upper().map({
+        df["Кастрирован_или_стерилизован"] = df["Neutered_or_spayed"].astype(str).str.upper().map({
             "TRUE": True,
             "FALSE": False,
             "NAN": None
         })
         
-        df["Allowed_outdoor"] = df["Allowed_outdoor"].astype(str).str.upper().map({
+        df["Разрешено_на_улицу"] = df["Allowed_outdoor"].astype(str).str.upper().map({
             "TRUE": True,
             "FALSE": False,
             "NAN": None
         })
         
-        df["Gender"] = df["Gender"].map({'male': 0, 'female': 1})
+        df["Пол"] = df["Gender"].map({'male': 0, 'female': 1})
         
-        required_columns = ["Breed", "Age_in_years", "Weight", "Owner_play_time_minutes", 
-                           "Sleep_time_hours", "Body_length", "Gender", "Country"]
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            st.error(f"Отсутствуют столбцы в данных: {missing_columns}")
+        необходимые_столбцы = ["Порода", "Возраст_в_годах", "Вес", "Время_игры_с_хозяином_минуты", 
+                              "Время_сна_часы", "Длина_тела", "Пол", "Страна"]
+        отсутствующие_столбцы = [col for col in необходимые_столбцы if col not in df.columns]
+        if отсутствующие_столбцы:
+            st.error(f"Отсутствуют столбцы в данных: {отсутствующие_столбцы}")
             st.stop()
+        
+        df = df.rename(columns={
+            "Breed": "Порода",
+            "Age_in_years": "Возраст_в_годах",
+            "Weight": "Вес",
+            "Owner_play_time_minutes": "Время_игры_с_хозяином_минуты",
+            "Sleep_time_hours": "Время_сна_часы",
+            "Body_length": "Длина_тела",
+            "Gender": "Пол",
+            "Country": "Страна",
+            "Neutered_or_spayed": "Кастрирован_или_стерилизован",
+            "Allowed_outdoor": "Разрешено_на_улицу",
+            "Fur_colour_dominant": "Цвет_шерсти_основной",
+            "Fur_pattern": "Узор_шерсти",
+            "Eye_colour": "Цвет_глаз",
+            "Preferred_food": "Предпочитаемая_еда",
+            "Age_in_months": "Возраст_в_месяцах"
+        })
         
         return df
     except FileNotFoundError:
         st.error("Файл data/cat_breeds_clean.csv не найден")
         st.stop()
 
-df = load_data()
+df = загрузить_данные()
 
 with st.sidebar:
     with st.expander("⚙️ Фильтры данных", expanded=True):
-        breed_filter = st.selectbox("Порода", ["Все"] + df["Breed"].unique().tolist())
-        gender_filter = st.selectbox("Пол", ["Все"] + df["Gender"].unique().tolist())
-        age_filter = st.slider("Возраст (годы)", 
-                             min_value=0, 
-                             max_value=int(df["Age_in_years"].max()), 
-                             value=(0, int(df["Age_in_years"].max())))
-        country_filter = st.selectbox("Страна", ["Все"] + df["Country"].unique().tolist())
+        фильтр_породы = st.selectbox("Порода", ["Все"] + df["Порода"].unique().tolist())
+        фильтр_пола = st.selectbox("Пол", ["Все"] + df["Пол"].unique().tolist())
+        фильтр_возраста = st.slider("Возраст (годы)", 
+                                   min_value=0, 
+                                   max_value=int(df["Возраст_в_годах"].max()), 
+                                   value=(0, int(df["Возраст_в_годах"].max())))
+        фильтр_страны = st.selectbox("Страна", ["Все"] + df["Страна"].unique().tolist())
 
-def filter_data(df):
-    filtered_df = df.copy()
-    if breed_filter != "Все":
-        filtered_df = filtered_df[filtered_df["Breed"] == breed_filter]
-    if gender_filter != "Все":
-        filtered_df = filtered_df[filtered_df["Gender"] == gender_filter]
-    filtered_df = filtered_df[(filtered_df["Age_in_years"] >= age_filter[0]) & 
-                            (filtered_df["Age_in_years"] <= age_filter[1])]
-    if country_filter != "Все":
-        filtered_df = filtered_df[filtered_df["Country"] == country_filter]
-    return filtered_df
+def отфильтровать_данные(df):
+    отфильтрованные_данные = df.copy()
+    if фильтр_породы != "Все":
+        отфильтрованные_данные = отфильтрованные_данные[отфильтрованные_данные["Порода"] == фильтр_породы]
+    if фильтр_пола != "Все":
+        отфильтрованные_данные = отфильтрованные_данные[отфильтрованные_данные["Пол"] == фильтр_пола]
+    отфильтрованные_данные = отфильтрованные_данные[(отфильтрованные_данные["Возраст_в_годах"] >= фильтр_возраста[0]) & 
+                                                    (отфильтрованные_данные["Возраст_в_годах"] <= фильтр_возраста[1])]
+    if фильтр_страны != "Все":
+        отфильтрованные_данные = отфильтрованные_данные[отфильтрованные_данные["Страна"] == фильтр_страны]
+    return отфильтрованные_данные
 
-filtered_df = filter_data(df)
+отфильтрованные_данные = отфильтровать_данные(df)
 
 @st.cache_resource
-def train_model(df):
+def обучить_модель(df):
     df_ml = df.copy()
-    df_ml['Neutered_or_spayed'] = df_ml['Neutered_or_spayed'].astype(int)
-    df_ml['Allowed_outdoor'] = df_ml['Allowed_outdoor'].astype(int)
+    df_ml['Кастрирован_или_стерилизован'] = df_ml['Кастрирован_или_стерилизован'].astype(int)
+    df_ml['Разрешено_на_улицу'] = df_ml['Разрешено_на_улицу'].astype(int)
 
-    X = df_ml.drop(['Breed', 'Age_in_months', 'Country'], axis=1)
-    y = df_ml['Breed']
+    X = df_ml.drop(['Порода', 'Возраст_в_месяцах', 'Страна'], axis=1)
+    y = df_ml['Порода']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    categorical_cols = ['Fur_colour_dominant', 'Fur_pattern', 'Eye_colour', 'Preferred_food']
+    категориальные_столбцы = ['Цвет_шерсти_основной', 'Узор_шерсти', 'Цвет_глаз', 'Предпочитаемая_еда']
 
-    preprocessor = ColumnTransformer(
+    препроцессор = ColumnTransformer(
         transformers=[
-            ('cat', OneHotEncoder(), categorical_cols)
+            ('cat', OneHotEncoder(), категориальные_столбцы)
         ],
         remainder='passthrough'
     )
 
-    pipeline = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', RandomForestClassifier(random_state=42, class_weight='balanced'))
+    конвейер = Pipeline(steps=[
+        ('препроцессор', препроцессор),
+        ('классификатор', RandomForestClassifier(random_state=42, class_weight='balanced'))
     ])
 
-    pipeline.fit(X_train, y_train)
+    конвейер.fit(X_train, y_train)
 
-    y_pred = pipeline.predict(X_test)
-    class_report = classification_report(y_test, y_pred, output_dict=True)
-    conf_matrix = confusion_matrix(y_test, y_pred)
-    accuracy = accuracy_score(y_test, y_pred)
+    y_pred = конвейер.predict(X_test)
+    отчет_классификации = classification_report(y_test, y_pred, output_dict=True)
+    матрица_ошибок = confusion_matrix(y_test, y_pred)
+    точность = accuracy_score(y_test, y_pred)
     
-    return pipeline, class_report, conf_matrix, accuracy
+    return конвейер, отчет_классификации, матрица_ошибок, точность
 
-pipeline, class_report, conf_matrix, accuracy = train_model(df)
+конвейер, отчет_классификации, матрица_ошибок, точность = обучить_модель(df)
 
 st.subheader("📊 Ключевые метрики")
 cols = st.columns(4)
-metrics = {
-    "Всего кошек": len(filtered_df),
-    "Средний возраст": f"{filtered_df['Age_in_years'].mean():.1f} лет",
-    "Средний вес": f"{filtered_df['Weight'].mean():.1f} кг",
-    "Активность (часы/день)": f"{filtered_df['Owner_play_time_minutes'].mean() / 60:.1f} часов"
+метрики = {
+    "Всего кошек": len(отфильтрованные_данные),
+    "Средний возраст": f"{отфильтрованные_данные['Возраст_в_годах'].mean():.1f} лет",
+    "Средний вес": f"{отфильтрованные_данные['Вес'].mean():.1f} кг",
+    "Активность (часы/день)": f"{отфильтрованные_данные['Время_игры_с_хозяином_минуты'].mean() / 60:.1f} часов"
 }
 
-for col, (label, value) in zip(cols, metrics.items()):
+for col, (метка, значение) in zip(cols, метрики.items()):
     with col:
         st.markdown(f"<div style='padding: 20px; background-color: #f8f9fa; border-radius: 10px;'>"
-                    f"<h3 style='margin:0; color: #2c2c2c;'>{value}</h3>"
-                    f"<p style='margin:0; color: #666;'>{label}</p></div>", 
+                    f"<h3 style='margin:0; color: #2c2c2c;'>{значение}</h3>"
+                    f"<p style='margin:0; color: #666;'>{метка}</p></div>", 
                     unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📈 Распределения", "📊 Сравнения", "🤖 Машинное обучение"])
+вкладка1, вкладка2, вкладка3 = st.tabs(["📈 Распределения", "📊 Сравнения", "🤖 Машинное обучение"])
 
-with tab1:
+with вкладка1:
     col1, col2 = st.columns(2)
     
     with col1:
-        fig = px.pie(filtered_df, names="Breed", title="Распределение по породам",
-                    hole=0.4, color="Breed", 
+        fig = px.pie(отфильтрованные_данные, names="Порода", title="Распределение по породам",
+                    hole=0.4, color="Порода", 
                     color_discrete_map={
                         'Angora': '#FFA07A',
                         'Ragdoll': '#87CEEB',
@@ -170,79 +188,87 @@ with tab1:
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
-        fig = px.histogram(filtered_df, x="Age_in_years", nbins=20, 
+        fig = px.histogram(отфильтрованные_данные, x="Возраст_в_годах", nbins=20, 
                          title="Распределение по возрасту",
-                         color="Breed", barmode="overlay",
+                         color="Порода", barmode="overlay",
                          opacity=0.7)
         st.plotly_chart(fig, use_container_width=True)
 
-with tab2:
+with вкладка2:
     col1, col2 = st.columns(2)
     
     with col1:
-        fig = px.box(filtered_df, x="Breed", y="Weight", 
+        fig = px.box(отфильтрованные_данные, x="Порода", y="Вес", 
                     title="Распределение веса по породам",
-                    color="Breed", points="all")
+                    color="Порода", points="all")
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
-        numerical_cols = ["Age_in_years", "Weight", "Body_length", 
-                        "Sleep_time_hours", "Owner_play_time_minutes"]
-        x_axis = st.selectbox("Ось X", numerical_cols, key="x_axis")
-        y_axis = st.selectbox("Ось Y", numerical_cols, index=1, key="y_axis")
+        числовые_столбцы = ["Возраст_в_годах", "Вес", "Длина_тела", 
+                           "Время_сна_часы", "Время_игры_с_хозяином_минуты"]
+        ось_x = st.selectbox("Ось X", числовые_столбцы, key="ось_x")
+        ось_y = st.selectbox("Ось Y", числовые_столбцы, index=1, key="ось_y")
         
         fig = px.scatter(
-            filtered_df, x=x_axis, y=y_axis, 
-            color="Breed", size="Weight",
-            hover_data=["Gender", "Country"],
-            title=f"{x_axis} vs {y_axis}",
+            отфильтрованные_данные, x=ось_x, y=ось_y, 
+            color="Порода", size="Вес",
+            hover_data=["Пол", "Страна"],
+            title=f"{ось_x} против {ось_y}",
             trendline="lowess"
         )
         st.plotly_chart(fig, use_container_width=True)
 
-with tab3:
+with вкладка3:
     st.subheader("Машинное обучение: Предсказание породы")
     
-    st.write(f"**Точность модели:** {accuracy:.2f}")
+    st.write(f"**Точность модели:** {точность:.2f}")
     
     st.write("**Отчет по классификации:**")
-    st.write(pd.DataFrame(class_report).transpose())
+    st.write(pd.DataFrame(отчет_классификации).transpose())
     
     st.subheader("Предскажите породу вашей кошки")
-    with st.form("prediction_form"):
-        age = st.slider("Возраст (годы)", 0.0, float(df["Age_in_years"].max()), 2.0)
-        weight = st.slider("Вес (кг)", 0.0, float(df["Weight"].max()), 5.0)
-        body_length = st.slider("Длина тела (см)", 0.0, float(df["Body_length"].max()), 40.0)
-        sleep_time = st.slider("Время сна (часы)", 0, int(df["Sleep_time_hours"].max()), 16)
-        play_time = st.slider("Время игры с хозяином (минуты)", 0, int(df["Owner_play_time_minutes"].max()), 20)
-        gender = st.selectbox("Пол", ["Мужской", "Женский"])
-        neutered = st.selectbox("Кастрирован/Стерилизован", [True, False])
-        outdoor = st.selectbox("Разрешено на улицу", [True, False])
-        fur_colour = st.selectbox("Цвет шерсти", df["Fur_colour_dominant"].unique())
-        fur_pattern = st.selectbox("Узор шерсти", df["Fur_pattern"].unique())
-        eye_colour = st.selectbox("Цвет глаз", df["Eye_colour"].unique())
-        preferred_food = st.selectbox("Предпочитаемая еда", df["Preferred_food"].unique())
+    with st.form("форма_предсказания"):
+        возраст = st.slider("Возраст (годы)", 0.0, float(df["Возраст_в_годах"].max()), 2.0)
+        вес = st.slider("Вес (кг)", 0.0, float(df["Вес"].max()), 5.0)
+        длина_тела = st.slider("Длина тела (см)", 0.0, float(df["Длина_тела"].max()), 40.0)
+        время_сна = st.slider("Время сна (часы)", 0, int(df["Время_сна_часы"].max()), 16)
+        время_игры = st.slider("Время игры с хозяином (минуты)", 0, int(df["Время_игры_с_хозяином_минуты"].max()), 20)
+        пол = st.selectbox("Пол", ["Мужской", "Женский"])
+        кастрирован = st.selectbox("Кастрирован/Стерилизован", [True, False])
+        разрешено_на_улицу = st.selectbox("Разрешено на улицу", [True, False])
+        цвет_шерсти = st.selectbox("Цвет шерсти", df["Цвет_шерсти_основной"].unique())
+        узор_шерсти = st.selectbox("Узор шерсти", df["Узор_шерсти"].unique())
+        цвет_глаз = st.selectbox("Цвет глаз", df["Цвет_глаз"].unique())
+        предпочитаемая_еда = st.selectbox("Предпочитаемая еда", df["Предпочитаемая_еда"].unique())
         
-        submit_button = st.form_submit_button("Предсказать")
+        кнопка_предсказать = st.form_submit_button("Предсказать")
         
-        if submit_button:
-            input_data = pd.DataFrame({
-                'Age_in_years': [age],
-                'Weight': [weight],
-                'Body_length': [body_length],
-                'Sleep_time_hours': [sleep_time],
-                'Owner_play_time_minutes': [play_time],
-                'Gender': [1 if gender == 'Женский' else 0],
-                'Neutered_or_spayed': [int(neutered)],
-                'Allowed_outdoor': [int(outdoor)],
-                'Fur_colour_dominant': [fur_colour],
-                'Fur_pattern': [fur_pattern],
-                'Eye_colour': [eye_colour],
-                'Preferred_food': [preferred_food]
+        if кнопка_предсказать:
+            входные_данные = pd.DataFrame({
+                'Возраст_в_годах': [возраст],
+                'Вес': [вес],
+                'Длина_тела': [длина_тела],
+                'Время_сна_часы': [время_сна],
+                'Время_игры_с_хозяином_минуты': [время_игры],
+                'Пол': [1 if пол == 'Женский' else 0],
+                'Кастрирован_или_стерилизован': [int(кастрирован)],
+                'Разрешено_на_улицу': [int(разрешено_на_улицу)],
+                'Цвет_шерсти_основной': [цвет_шерсти],
+                'Узор_шерсти': [узор_шерсти],
+                'Цвет_глаз': [цвет_глаз],
+                'Предпочитаемая_еда': [предпочитаемая_еда]
             })
             
-            prediction = pipeline.predict(input_data)[0]
-            st.success(f"Предсказанная порода: **{prediction}**")
+            # Получаем все столбцы из обучающих данных
+            обучающие_столбцы = конвейер.named_steps['препроцессор'].transformers_[0][2] + \
+                               [col for col in X.columns if col not in категориальные_столбцы]
+            # Добавляем недостающие столбцы с нулевыми значениями
+            for col in обучающие_столбцы:
+                if col not in входные_данные.columns:
+                    входные_данные[col] = 0
+
+            предсказание = конвейер.predict(входные_данные)[0]
+            st.success(f"Предсказанная порода: **{предсказание}**")
 
 with st.sidebar:
     st.markdown("---")
