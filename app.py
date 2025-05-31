@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import numpy as np
+import numpy as np 
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
@@ -38,9 +38,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🐱 Аналитика кошек")
+st.title("🐱 Расширенная аналитика кошек")
 st.markdown("""
-**Анализ характеристик трех пород кошек:** Ангора, Рэгдолл, Мейн-кун  
+**Анализ характеристик кошек трёх пород:** Ангора, Рэгдолл, Мейн-кун  
 *Источник данных: [It's Raining Cats Dataset](https://www.kaggle.com/datasets/joannanplkrk/its-raining-cats)*
 """)
 
@@ -52,7 +52,7 @@ def load_data():
         df["Neutered_or_spayed"] = df["Neutered_or_spayed"].astype(str).str.upper().map({
             "TRUE": True,
             "FALSE": False,
-            "NAN": None
+            "NAN": None 
         })
         
         df["Allowed_outdoor"] = df["Allowed_outdoor"].astype(str).str.upper().map({
@@ -137,13 +137,13 @@ def train_model(df):
 
 pipeline, class_report, conf_matrix, accuracy = train_model(df)
 
-st.subheader("📊 Ключевые метрики")
+st.subheader("📊 Основные показатели")
 cols = st.columns(4)
 metrics = {
     "Всего кошек": len(filtered_df),
     "Средний возраст": f"{filtered_df['Age_in_years'].mean():.1f} лет",
     "Средний вес": f"{filtered_df['Weight'].mean():.1f} кг",
-    "Активность (часы/день)": f"{filtered_df['Owner_play_time_minutes'].mean() / 60:.1f} часов"
+    "Активность (ч/день)": f"{filtered_df['Owner_play_time_minutes'].mean() / 60:.1f} часов"
 }
 
 for col, (label, value) in zip(cols, metrics.items()):
@@ -153,7 +153,7 @@ for col, (label, value) in zip(cols, metrics.items()):
                     f"<p style='margin:0; color: #666;'>{label}</p></div>", 
                     unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📈 Распределения", "📊 Сравнения", "🤖 Машинное обучение"])
+tab1, tab2, tab3 = st.tabs(["📈 Распределение", "📊 Сравнение", "🤖 Машинное обучение"])
 
 with tab1:
     col1, col2 = st.columns(2)
@@ -171,7 +171,7 @@ with tab1:
     
     with col2:
         fig = px.histogram(filtered_df, x="Age_in_years", nbins=20, 
-                         title="Распределение по возрасту",
+                         title="Распределение возраста",
                          color="Breed", barmode="overlay",
                          opacity=0.7)
         st.plotly_chart(fig, use_container_width=True)
@@ -195,29 +195,31 @@ with tab2:
             filtered_df, x=x_axis, y=y_axis, 
             color="Breed", size="Weight",
             hover_data=["Gender", "Country"],
-            title=f"{x_axis} vs {y_axis}",
-            trendline="lowess"
+            title=f"{x_axis} vs {y_axis}"
         )
         st.plotly_chart(fig, use_container_width=True)
 
 with tab3:
-    st.subheader("Машинное обучение: Предсказание породы")
+    st.subheader("Машинное обучение: предсказание породы")
     
     st.write(f"**Точность модели:** {accuracy:.2f}")
+    
+    st.write("**Матрица ошибок:**")
+    st.write(conf_matrix)
     
     st.write("**Отчет по классификации:**")
     st.write(pd.DataFrame(class_report).transpose())
     
-    st.subheader("Предскажите породу вашей кошки")
+    st.subheader("Попробуй предсказать породу кошки")
     with st.form("prediction_form"):
         age = st.slider("Возраст (годы)", 0.0, float(df["Age_in_years"].max()), 2.0)
         weight = st.slider("Вес (кг)", 0.0, float(df["Weight"].max()), 5.0)
         body_length = st.slider("Длина тела (см)", 0.0, float(df["Body_length"].max()), 40.0)
         sleep_time = st.slider("Время сна (часы)", 0, int(df["Sleep_time_hours"].max()), 16)
         play_time = st.slider("Время игры с хозяином (минуты)", 0, int(df["Owner_play_time_minutes"].max()), 20)
-        gender = st.selectbox("Пол", ["Мужской", "Женский"])
-        neutered = st.selectbox("Кастрирован/Стерилизован", [True, False])
-        outdoor = st.selectbox("Разрешено на улицу", [True, False])
+        gender = st.selectbox("Пол", ["male", "female"])
+        neutered = st.selectbox("Стерилизован/кастрирован", [True, False])
+        outdoor = st.selectbox("Разрешено выходить на улицу", [True, False])
         fur_colour = st.selectbox("Цвет шерсти", df["Fur_colour_dominant"].unique())
         fur_pattern = st.selectbox("Узор шерсти", df["Fur_pattern"].unique())
         eye_colour = st.selectbox("Цвет глаз", df["Eye_colour"].unique())
@@ -232,7 +234,7 @@ with tab3:
                 'Body_length': [body_length],
                 'Sleep_time_hours': [sleep_time],
                 'Owner_play_time_minutes': [play_time],
-                'Gender': [1 if gender == 'Женский' else 0],
+                'Gender': [1 if gender == 'female' else 0],
                 'Neutered_or_spayed': [int(neutered)],
                 'Allowed_outdoor': [int(outdoor)],
                 'Fur_colour_dominant': [fur_colour],
@@ -250,9 +252,9 @@ with st.sidebar:
         st.markdown("""
         **Автор:** [ast]  
         **Версия:** 1.0  
-        **Последнее обновление:** 2023-12-20  
+        **Обновлено:** 2023-12-20  
                     
-        Этот дашборд анализирует данные трех пород кошек:
+        Этот дашборд позволяет анализировать данные о кошках трёх пород:
         - Ангора
         - Рэгдолл
         - Мейн-кун
