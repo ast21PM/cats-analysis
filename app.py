@@ -12,12 +12,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import os 
 
-# Определение путей
-BASE_PATH = os.path.abspath(os.path.dirname(__file__))
-DATA_PATH = os.path.abspath(os.path.join(BASE_PATH, "data"))
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_PATH, "data")
 
-st.write(f"BASE_PATH: {BASE_PATH}")
-st.write(f"DATA_PATH: {DATA_PATH}")
+st.write("DEBUG: Base Path =", BASE_PATH)
+st.write("DEBUG: Data Path =", DATA_PATH)
 
 st.set_page_config(
     page_title="Аналитика кошек",
@@ -94,27 +93,6 @@ BREED_IMAGES = {
     'Ragdoll': [os.path.join(DATA_PATH, f"Ragdoll{i}.png") for i in range(1, 4)],
 }
 
-# Функция для проверки и загрузки изображения
-def load_image(image_name, caption=None):
-    try:
-        image_path = os.path.join(DATA_PATH, image_name)
-        st.write(f"Попытка загрузить изображение: {image_path}")
-        
-        if not os.path.exists(image_path):
-            st.error(f"Ошибка: Файл {image_path} не существует")
-            return
-            
-        if not os.path.isfile(image_path):
-            st.error(f"Ошибка: {image_path} не является файлом")
-            return
-            
-        try:
-            return st.image(image_path, caption=caption, use_column_width=True)
-        except Exception as e:
-            st.error(f"Ошибка при загрузке изображения {image_name}: {str(e)}")
-            
-    except Exception as e:
-        st.error(f"Общая ошибка при работе с {image_name}: {str(e)}")
 
 @st.cache_data
 def load_data():
@@ -286,7 +264,15 @@ with tab1:
     
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        load_image("three.png", caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун")
+        try:
+            image_path = os.path.join(DATA_PATH, "three.png")
+            if os.path.exists(image_path):
+                st.write(f"Путь к файлу: {image_path}")
+                image = st.image(image_path, caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун", width=600)
+            else:
+                st.error(f"Файл не найден по пути: {image_path}")
+        except Exception as e:
+            st.error(f"Ошибка при загрузке изображения three.png: {str(e)}")
 
 with tab2:
     col1, col2 = st.columns(2)
@@ -313,7 +299,15 @@ with tab2:
     
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        load_image("threes.png", caption="Сравнительный анализ пород")
+        try:
+            image_path = os.path.join(DATA_PATH, "threes.png")
+            if os.path.exists(image_path):
+                st.write(f"Путь к файлу: {image_path}")
+                image = st.image(image_path, caption="Сравнительный анализ пород", width=600)
+            else:
+                st.error(f"Файл не найден по пути: {image_path}")
+        except Exception as e:
+            st.error(f"Ошибка при загрузке изображения threes.png: {str(e)}")
 
 with tab3:
     st.subheader("Машинное обучение: предсказание породы")
