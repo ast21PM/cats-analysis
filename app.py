@@ -256,7 +256,6 @@ with tab1:
         
         st.plotly_chart(fig, use_container_width=True)
     
-    # Добавляем центрированное изображение после графиков
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.image("data/all.png", caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун", width=600)
@@ -284,7 +283,6 @@ with tab2:
         )
         st.plotly_chart(fig, use_container_width=True)
     
-    # Добавляем центрированное изображение после графиков
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.image("data/alls.png", caption="Сравнительный анализ пород", width=600)
