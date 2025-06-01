@@ -12,18 +12,24 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import os 
 
-BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_PATH, "data")
-
-st.write("DEBUG: Base Path =", BASE_PATH)
-st.write("DEBUG: Data Path =", DATA_PATH)
-
+# Первым делом настраиваем конфигурацию страницы
 st.set_page_config(
     page_title="Аналитика кошек",
     page_icon="🐾",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Используем абсолютный путь с правильными слешами
+BASE_PATH = "C:/Users/ast/Documents/cats-analysis"
+DATA_PATH = os.path.join(BASE_PATH, "data").replace("\\", "/")
+
+# Отладочная информация
+st.write("Проверка путей:")
+st.write("1. BASE_PATH =", BASE_PATH)
+st.write("2. DATA_PATH =", DATA_PATH)
+st.write("3. three.png существует?", os.path.exists(os.path.join(DATA_PATH, "three.png")))
+st.write("4. threes.png существует?", os.path.exists(os.path.join(DATA_PATH, "threes.png")))
 
 st.markdown("""
 <style>
@@ -265,14 +271,13 @@ with tab1:
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         try:
-            image_path = os.path.join(DATA_PATH, "three.png")
-            if os.path.exists(image_path):
-                st.write(f"Путь к файлу: {image_path}")
-                image = st.image(image_path, caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун", width=600)
-            else:
-                st.error(f"Файл не найден по пути: {image_path}")
+            image_path = f"{DATA_PATH}/three.png"
+            st.write("Загружаю изображение:", image_path)
+            with open(image_path, "rb") as file:
+                image_bytes = file.read()
+            st.image(image_bytes, caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун", width=600)
         except Exception as e:
-            st.error(f"Ошибка при загрузке изображения three.png: {str(e)}")
+            st.error(f"Ошибка при загрузке three.png: {str(e)}")
 
 with tab2:
     col1, col2 = st.columns(2)
@@ -300,14 +305,13 @@ with tab2:
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         try:
-            image_path = os.path.join(DATA_PATH, "threes.png")
-            if os.path.exists(image_path):
-                st.write(f"Путь к файлу: {image_path}")
-                image = st.image(image_path, caption="Сравнительный анализ пород", width=600)
-            else:
-                st.error(f"Файл не найден по пути: {image_path}")
+            image_path = f"{DATA_PATH}/threes.png"
+            st.write("Загружаю изображение:", image_path)
+            with open(image_path, "rb") as file:
+                image_bytes = file.read()
+            st.image(image_bytes, caption="Сравнительный анализ пород", width=600)
         except Exception as e:
-            st.error(f"Ошибка при загрузке изображения threes.png: {str(e)}")
+            st.error(f"Ошибка при загрузке threes.png: {str(e)}")
 
 with tab3:
     st.subheader("Машинное обучение: предсказание породы")
