@@ -11,6 +11,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import os 
+from pathlib import Path
 
 # Первым делом настраиваем конфигурацию страницы
 st.set_page_config(
@@ -20,16 +21,38 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Используем абсолютный путь с правильными слешами
-BASE_PATH = "C:/Users/ast/Documents/cats-analysis"
-DATA_PATH = os.path.join(BASE_PATH, "data").replace("\\", "/")
+# Определяем пути относительно текущего файла
+SCRIPT_DIR = Path(__file__).parent.absolute()
+DATA_DIR = SCRIPT_DIR / "data"
+ASSETS_DIR = SCRIPT_DIR / "assets"
+
+def load_image(image_path):
+    """Загружает изображение из файла"""
+    try:
+        with open(image_path, "rb") as f:
+            return f.read()
+    except Exception as e:
+        st.error(f"Ошибка при загрузке изображения {image_path}: {str(e)}")
+        return None
+
+def load_breed_image(img_path):
+    """Загружает изображение породы"""
+    try:
+        with open(img_path, "rb") as f:
+            return f.read()
+    except Exception as e:
+        st.error(f"Ошибка при загрузке изображения породы {img_path}: {str(e)}")
+        return None
+
+# Загружаем изображения
+three_image = load_image(ASSETS_DIR / "three.png")
+threes_image = load_image(ASSETS_DIR / "threes.png")
 
 # Отладочная информация
 st.write("Проверка путей:")
-st.write("1. BASE_PATH =", BASE_PATH)
-st.write("2. DATA_PATH =", DATA_PATH)
-st.write("3. three.png существует?", os.path.exists(os.path.join(DATA_PATH, "three.png")))
-st.write("4. threes.png существует?", os.path.exists(os.path.join(DATA_PATH, "threes.png")))
+st.write("1. BASE_PATH =", DATA_DIR)
+st.write("2. three.png существует?", three_image is not None)
+st.write("3. threes.png существует?", threes_image is not None)
 
 st.markdown("""
 <style>
@@ -94,16 +117,16 @@ INV_PREFERRED_FOOD_MAP = {v: k for k, v in PREFERRED_FOOD_MAP.items()}
 
 
 BREED_IMAGES = {
-    'Angora': [os.path.join(DATA_PATH, f"Angora{i}.png") for i in range(1, 4)],
-    'Maine coon': [os.path.join(DATA_PATH, f"Coon{i}.png") for i in range(1, 4)],
-    'Ragdoll': [os.path.join(DATA_PATH, f"Ragdoll{i}.png") for i in range(1, 4)],
+    'Angora': [DATA_DIR / f"Angora{i}.png" for i in range(1, 4)],
+    'Maine coon': [DATA_DIR / f"Coon{i}.png" for i in range(1, 4)],
+    'Ragdoll': [DATA_DIR / f"Ragdoll{i}.png" for i in range(1, 4)],
 }
 
 
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_csv("data/cat_breeds_clean.csv", sep=";")
+        df = pd.read_csv(DATA_DIR / "cat_breeds_clean.csv", sep=";")
         
         df["Neutered_or_spayed"] = df["Neutered_or_spayed"].astype(str).str.upper().map({
             "TRUE": 'Да',
@@ -270,14 +293,8 @@ with tab1:
     
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        try:
-            image_path = f"{DATA_PATH}/three.png"
-            st.write("Загружаю изображение:", image_path)
-            with open(image_path, "rb") as file:
-                image_bytes = file.read()
-            st.image(image_bytes, caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун", width=600)
-        except Exception as e:
-            st.error(f"Ошибка при загрузке three.png: {str(e)}")
+        if three_image is not None:
+            st.image(three_image, caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун", width=600)
 
 with tab2:
     col1, col2 = st.columns(2)
@@ -304,14 +321,8 @@ with tab2:
     
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        try:
-            image_path = f"{DATA_PATH}/threes.png"
-            st.write("Загружаю изображение:", image_path)
-            with open(image_path, "rb") as file:
-                image_bytes = file.read()
-            st.image(image_bytes, caption="Сравнительный анализ пород", width=600)
-        except Exception as e:
-            st.error(f"Ошибка при загрузке threes.png: {str(e)}")
+        if threes_image is not None:
+            st.image(threes_image, caption="Сравнительный анализ пород", width=600)
 
 with tab3:
     st.subheader("Машинное обучение: предсказание породы")
@@ -365,9 +376,11 @@ with tab3:
                 st.write(f"Примеры кошек породы {prediction}:")
                 cols = st.columns(len(BREED_IMAGES[prediction]))
                 for i, img_path in enumerate(BREED_IMAGES[prediction]):
-                    if os.path.exists(img_path):
-                        with cols[i]:
-                            st.image(img_path, caption=f"{prediction} {i+1}", width=300)
+                    if img_path.exists():
+                        image_data = load_breed_image(img_path)
+                        if image_data is not None:
+                            with cols[i]:
+                                st.image(image_data, caption=f"{prediction} {i+1}", width=300)
                     else:
                         st.warning(f"Изображение не найдено: {img_path}")
             else:
