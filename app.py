@@ -13,7 +13,6 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 import os 
 from pathlib import Path
 
-# Первым делом настраиваем конфигурацию страницы
 st.set_page_config(
     page_title="Аналитика кошек",
     page_icon="🐾",
@@ -21,7 +20,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Определяем пути относительно текущего файла
 SCRIPT_DIR = Path(__file__).parent.absolute()
 DATA_DIR = SCRIPT_DIR / "data"
 ASSETS_DIR = SCRIPT_DIR / "assets"
@@ -42,7 +40,6 @@ def load_breed_image(img_path):
     except Exception:
         return None
 
-# Загружаем изображения
 three_image = load_image(ASSETS_DIR / "three.png")
 threes_image = load_image(ASSETS_DIR / "threes.png")
 
