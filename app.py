@@ -41,10 +41,9 @@ st.markdown("""
 
 st.title("🐱 Расширенная аналитика кошек")
 st.markdown("""
-**Анализ характеристик кошек трёх пород:** Ангора, Рэгдолл, Мейн-кун  
+**Анализ характеристик кошек трёх пород:** Ангора, Рэгдолл, Мейн-кун  
 *Источник данных: [It's Raining Cats Dataset](https://www.kaggle.com/datasets/joannanplkrk/its-raining-cats)*
 """)
-
 
 FUR_COLOUR_MAP = {
     'white': 'Белый',
@@ -256,6 +255,11 @@ with tab1:
         )
         
         st.plotly_chart(fig, use_container_width=True)
+    
+    # Добавляем центрированное изображение после графиков
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.image("data/all.png", caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун", width=600)
 
 with tab2:
     col1, col2 = st.columns(2)
@@ -279,6 +283,11 @@ with tab2:
             title=f"{x_axis} vs {y_axis}"
         )
         st.plotly_chart(fig, use_container_width=True)
+    
+    # Добавляем центрированное изображение после графиков
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.image("data/alls.png", caption="Сравнительный анализ пород", width=600)
 
 with tab3:
     st.subheader("Машинное обучение: предсказание породы")
@@ -298,7 +307,7 @@ with tab3:
         body_length = st.slider("Длина тела (см)", 0.0, float(df["Body_length"].max()), 40.0)
         sleep_time = st.slider("Время сна (часы)", 0, int(df["Sleep_time_hours"].max()), 16)
         play_time = st.slider("Время игры с хозяином (минуты)", 0, int(df["Owner_play_time_minutes"].max()), 20)
-        gender = st.selectbox("Пол", ["Кот", "Кошка"]) 
+        gender = st.selectbox("Пол", ["Кот", "Кошка"])
         neutered = st.selectbox("Стерилизован/кастрирован", ["Да", "Нет"])
         outdoor = st.selectbox("Разрешено выходить на улицу", ["Да", "Нет"])
         
@@ -316,7 +325,7 @@ with tab3:
                 'Body_length': [body_length],
                 'Sleep_time_hours': [sleep_time],
                 'Owner_play_time_minutes': [play_time],
-                'Gender': [1 if gender == 'Кошка' else 0], 
+                'Gender': [1 if gender == 'Кошка' else 0],
                 'Neutered_or_spayed': [1 if neutered == 'Да' else 0],
                 'Allowed_outdoor': [1 if outdoor == 'Да' else 0],
                 'Fur_colour_dominant': [INV_FUR_COLOUR_MAP.get(fur_colour)],
@@ -328,15 +337,13 @@ with tab3:
             prediction = pipeline.predict(input_data)[0]
             st.success(f"Предсказанная порода: **{prediction}**")
 
-
             if prediction in BREED_IMAGES:
                 st.write(f"Примеры кошек породы {prediction}:")
                 cols = st.columns(len(BREED_IMAGES[prediction]))
                 for i, img_path in enumerate(BREED_IMAGES[prediction]):
-
                     if os.path.exists(img_path):
                         with cols[i]:
-                            st.image(img_path, caption=f"{prediction} {i+1}", use_container_width=True)
+                            st.image(img_path, caption=f"{prediction} {i+1}", width=300)
                     else:
                         st.warning(f"Изображение не найдено: {img_path}")
             else:
@@ -346,9 +353,9 @@ with st.sidebar:
     st.markdown("---")
     with st.expander("ℹ️ О проекте"):
         st.markdown("""
-        **Автор:** [ast]  
-        **Версия:** 1.0  
-        **Обновлено:** 2023-12-20  
+        **Автор:** [ast]  
+        **Версия:** 1.0  
+        **Обновлено:** 2023-12-20  
                             
         Этот дашборд позволяет анализировать данные о кошках трёх пород:
         - Ангора
