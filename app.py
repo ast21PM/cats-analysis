@@ -278,7 +278,7 @@ with tab1:
                                "count": "Количество кошек",
                                "Breed": "Порода"
                            })
-        
+         
         fig.update_layout(
             bargap=0.2,
             bargroupgap=0.1
