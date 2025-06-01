@@ -32,7 +32,6 @@ def load_image(image_path):
         with open(image_path, "rb") as f:
             return f.read()
     except Exception as e:
-        st.error(f"Ошибка при загрузке изображения {image_path}: {str(e)}")
         return None
 
 def load_breed_image(img_path):
@@ -40,19 +39,18 @@ def load_breed_image(img_path):
     try:
         with open(img_path, "rb") as f:
             return f.read()
-    except Exception as e:
-        st.error(f"Ошибка при загрузке изображения породы {img_path}: {str(e)}")
+    except Exception:
         return None
 
 # Загружаем изображения
 three_image = load_image(ASSETS_DIR / "three.png")
 threes_image = load_image(ASSETS_DIR / "threes.png")
 
-# Отладочная информация
-st.write("Проверка путей:")
-st.write("1. BASE_PATH =", DATA_DIR)
-st.write("2. three.png существует?", three_image is not None)
-st.write("3. threes.png существует?", threes_image is not None)
+BREED_IMAGES = {
+    'Angora': [DATA_DIR / f"Angora{i}.png" for i in range(1, 4)],
+    'Maine coon': [DATA_DIR / f"Coon{i}.png" for i in range(1, 4)],
+    'Ragdoll': [DATA_DIR / f"Ragdoll{i}.png" for i in range(1, 4)],
+}
 
 st.markdown("""
 <style>
@@ -114,14 +112,6 @@ INV_FUR_COLOUR_MAP = {v: k for k, v in FUR_COLOUR_MAP.items()}
 INV_FUR_PATTERN_MAP = {v: k for k, v in FUR_PATTERN_MAP.items()}
 INV_EYE_COLOUR_MAP = {v: k for k, v in EYE_COLOUR_MAP.items()}
 INV_PREFERRED_FOOD_MAP = {v: k for k, v in PREFERRED_FOOD_MAP.items()}
-
-
-BREED_IMAGES = {
-    'Angora': [DATA_DIR / f"Angora{i}.png" for i in range(1, 4)],
-    'Maine coon': [DATA_DIR / f"Coon{i}.png" for i in range(1, 4)],
-    'Ragdoll': [DATA_DIR / f"Ragdoll{i}.png" for i in range(1, 4)],
-}
-
 
 @st.cache_data
 def load_data():
@@ -376,13 +366,10 @@ with tab3:
                 st.write(f"Примеры кошек породы {prediction}:")
                 cols = st.columns(len(BREED_IMAGES[prediction]))
                 for i, img_path in enumerate(BREED_IMAGES[prediction]):
-                    if img_path.exists():
-                        image_data = load_breed_image(img_path)
-                        if image_data is not None:
-                            with cols[i]:
-                                st.image(image_data, caption=f"{prediction} {i+1}", width=300)
-                    else:
-                        st.warning(f"Изображение не найдено: {img_path}")
+                    image_data = load_breed_image(img_path)
+                    if image_data is not None:
+                        with cols[i]:
+                            st.image(image_data, caption=f"{prediction} {i+1}", width=300)
             else:
                 st.info("Для данной породы нет доступных изображений.")
 
