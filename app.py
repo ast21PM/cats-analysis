@@ -82,9 +82,9 @@ INV_PREFERRED_FOOD_MAP = {v: k for k, v in PREFERRED_FOOD_MAP.items()}
 
 
 BREED_IMAGES = {
-    'Angora': [f"data/Angora{i}.png" for i in range(1, 4)],
-    'Maine coon': [f"data/Coon{i}.png" for i in range(1, 4)],
-    'Ragdoll': [f"data/Ragdoll{i}.png" for i in range(1, 4)],
+    'Angora': [f"./data/Angora{i}.png" for i in range(1, 4)],
+    'Maine coon': [f"./data/Coon{i}.png" for i in range(1, 4)],
+    'Ragdoll': [f"./data/Ragdoll{i}.png" for i in range(1, 4)],
 }
 
 
@@ -258,7 +258,7 @@ with tab1:
     
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        st.image("data/all.png", caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун", width=600)
+        st.image("./data/all.png", caption="Сравнение пород: Ангора, Рэгдолл и Мейн-кун", width=600)
 
 with tab2:
     col1, col2 = st.columns(2)
@@ -285,7 +285,7 @@ with tab2:
     
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        st.image("data/alls.png", caption="Сравнительный анализ пород", width=600)
+        st.image("./data/alls.png", caption="Сравнительный анализ пород", width=600)
 
 with tab3:
     st.subheader("Машинное обучение: предсказание породы")
