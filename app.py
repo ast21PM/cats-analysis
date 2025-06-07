@@ -188,7 +188,7 @@ def train_model(df):
     df_ml["Eye_colour"] = df_ml["Eye_colour"].apply(lambda x: INV_EYE_COLOUR_MAP.get(x, x))
     df_ml["Preferred_food"] = df_ml["Preferred_food"].apply(lambda x: INV_PREFERRED_FOOD_MAP.get(x, x))
 
-    X = df_ml.drop(['Breed', 'Age_in_months', 'Country'], axis=1)
+    X = df_ml.drop(['Breed', 'Age_in_months', 'Country', 'Latitude', 'Longitude'], axis=1)
     y = df_ml['Breed']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -238,7 +238,7 @@ for col, (label, value) in zip(cols, metrics.items()):
                             f"<p style='margin:0; color: #666;'>{label}</p></div>", 
                             unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📈 Распределение", "📊 Сравнение", "🤖 Машинное обучение"])
+tab1, tab2, tab3, tab4 = st.tabs(["📈 Распределение", "📊 Сравнение", "🤖 Машинное обучение", "🗺️ Карта мира"])
 
 with tab1:
     col1, col2 = st.columns(2)
@@ -369,6 +369,111 @@ with tab3:
                             st.image(image_data, caption=f"{prediction} {i+1}", width=300)
             else:
                 st.info("Для данной породы нет доступных изображений.")
+
+@st.cache_data
+def get_map_data(df):
+    """Кэшируем данные для карты"""
+    return df[['Latitude', 'Longitude', 'Breed', 'Gender', 'Age_in_years', 'Weight']].copy()
+
+with tab4:
+    st.subheader("Географическое распределение кошек")
+    
+
+    map_data = get_map_data(filtered_df)
+ 
+    max_points = 150
+    if len(map_data) > max_points:
+        map_data = map_data.sample(n=max_points, random_state=42)
+    
+ 
+    breed_colors = {
+        'Angora': '#FF4B4B',
+        'Maine coon': '#1F77B4',
+        'Ragdoll': '#2CA02C'
+    }
+    
+    
+    fig = px.scatter_geo(
+        map_data,
+        lat='Latitude',
+        lon='Longitude',
+        color='Breed',
+        color_discrete_map=breed_colors,
+        hover_name='Breed',
+        hover_data=['Gender', 'Age_in_years', 'Weight'],
+        title='Распределение кошек по миру',
+        projection='natural earth'
+    )
+    
+
+    fig.update_layout(
+        legend=dict(
+            yanchor="bottom",
+            y=0.01,
+            xanchor="left",
+            x=0.01,
+            bgcolor="#f4f4f4",
+            bordercolor="#888",
+            borderwidth=1,
+            font=dict(
+                size=16,  
+                color="#222" 
+            ),
+            title_font=dict(
+                size=18,
+                color="#222"
+            )
+        ),
+        width=1200,
+        height=600,
+        margin=dict(l=0, r=0, t=50, b=0),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        geo=dict(
+            center=dict(lat=30, lon=0),
+            projection_scale=1.5,
+            fitbounds="locations", 
+            showframe=False,
+            showland=True,
+            showcountries=True,
+            showcoastlines=True,
+            lonaxis_range=[-180, 180],
+            lataxis_range=[-90, 90]
+        )
+    )
+    fig.update_geos(
+        resolution=50,
+        showland=True,
+        showcoastlines=True,
+        showcountries=True,
+        countrycolor='rgb(243, 243, 243)',
+        landcolor='rgb(217, 217, 217)',
+        coastlinecolor='rgb(128, 128, 128)',
+        showocean=True,
+        oceancolor='rgb(204, 229, 255)',
+        showlakes=False,
+        showrivers=False,
+        projection_type='natural earth',
+        fitbounds="locations",
+        lonaxis_range=[-180, 180],
+        lataxis_range=[-90, 90]
+    )
+ 
+    st.plotly_chart(fig, use_container_width=True, config={
+        'displayModeBar': True,
+        'scrollZoom': True
+    })
+    
+
+    st.subheader("Статистика по странам")
+    country_stats = filtered_df.groupby('Country').agg({
+        'Breed': 'count',
+        'Age_in_years': 'mean',
+        'Weight': 'mean'
+    }).round(2)
+    
+    country_stats.columns = ['Количество кошек', 'Средний возраст', 'Средний вес']
+    st.dataframe(country_stats)
 
 with st.sidebar:
     st.markdown("---")
